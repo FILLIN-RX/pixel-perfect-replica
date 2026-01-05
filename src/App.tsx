@@ -9,6 +9,11 @@ import Schedule from "./pages/Schedule";
 import Sessions from "./pages/Sessions";
 import Teachers from "./pages/Teachers";
 import Rooms from "./pages/Rooms";
+import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
+import ProfileChef from "./pages/ProfileChef";
+import ProfileEnseignant from "./pages/ProfileEnseignant";
+import ProfileDelegue from "./pages/ProfileDelegue";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,11 +26,16 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Teachers />} />
-            <Route path="/schedule" element={<Index />} />
-            <Route path="/sessions" element={<Schedule />} />
-            <Route path="/teachers" element={<Sessions />} />
+            <Route path="/" element={<Index />} />
+            <Route path="/schedule" element={<Schedule />} />
+            <Route path="/sessions" element={<Sessions />} />
+            <Route path="/teachers" element={<Teachers />} />
             <Route path="/rooms" element={<Rooms />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/profile/chef" element={<ProfileChef />} />
+            <Route path="/profile/enseignant" element={<ProfileEnseignant />} />
+            <Route path="/profile/delegue" element={<ProfileDelegue />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
