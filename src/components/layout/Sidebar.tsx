@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Calendar,
@@ -9,7 +9,22 @@ import {
   BarChart3,
   Settings,
   GraduationCap,
+  Crown,
+  LogOut,
+  ChevronDown,
+  User,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Tableau de bord", path: "/" },
@@ -21,7 +36,47 @@ const navItems = [
   { icon: Settings, label: "Paramètres", path: "/settings" },
 ];
 
+const roleLabels = {
+  chef_departement: "Chef Département",
+  enseignant: "Enseignant",
+  delegue: "Délégué",
+};
+
+const roleIcons = {
+  chef_departement: Crown,
+  enseignant: GraduationCap,
+  delegue: Users,
+};
+
+const roleColors = {
+  chef_departement: "bg-primary text-primary-foreground",
+  enseignant: "bg-secondary text-secondary-foreground",
+  delegue: "bg-accent text-accent-foreground",
+};
+
 export function Sidebar() {
+  const { profile, signOut, isChef, isEnseignant, isDelegue } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
+  const handleProfileNavigation = () => {
+    if (isChef) {
+      navigate("/profile/chef");
+    } else if (isEnseignant) {
+      navigate("/profile/enseignant");
+    } else {
+      navigate("/profile/delegue");
+    }
+  };
+
+  const RoleIcon = profile?.role ? roleIcons[profile.role] : User;
+  const roleLabel = profile?.role ? roleLabels[profile.role] : "Utilisateur";
+  const roleColor = profile?.role ? roleColors[profile.role] : "bg-muted text-muted-foreground";
+
   return (
     <motion.aside
       initial={{ x: -280 }}
@@ -74,21 +129,49 @@ export function Sidebar() {
           ))}
         </nav>
 
-        {/* Footer */}
+        {/* User Profile Selector */}
         <div className="border-t border-sidebar-border p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-foreground">
-              <span className="text-sm font-semibold">CD</span>
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-sidebar-foreground">
-                Chef Département
-              </p>
-              <p className="text-xs text-sidebar-foreground/60">
-                Informatique
-              </p>
-            </div>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-3 px-3 py-6 hover:bg-sidebar-accent"
+              >
+                <div className={`flex h-9 w-9 items-center justify-center rounded-full ${roleColor}`}>
+                  <RoleIcon className="h-5 w-5" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-medium text-sidebar-foreground truncate">
+                    {profile?.full_name || "Utilisateur"}
+                  </p>
+                  <Badge variant="outline" className="mt-1 text-[10px]">
+                    {roleLabel}
+                  </Badge>
+                </div>
+                <ChevronDown className="h-4 w-4 text-sidebar-foreground/60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Mon Compte</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleProfileNavigation} className="gap-2">
+                <RoleIcon className="h-4 w-4" />
+                Mon Espace {roleLabel}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/settings")} className="gap-2">
+                <Settings className="h-4 w-4" />
+                Paramètres
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleSignOut}
+                className="gap-2 text-destructive focus:text-destructive"
+              >
+                <LogOut className="h-4 w-4" />
+                Déconnexion
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </motion.aside>
