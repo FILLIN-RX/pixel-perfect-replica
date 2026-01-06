@@ -26,13 +26,29 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 
-const navItems = [
-  { icon: LayoutDashboard, label: "Tableau de bord", path: "/" },
+// Navigation items for Chef de Département
+const chefNavItems = [
+  { icon: Crown, label: "Mon Espace", path: "/profile/chef" },
   { icon: Calendar, label: "Emploi du temps", path: "/schedule" },
   { icon: BookOpen, label: "Séances", path: "/sessions" },
   { icon: Users, label: "Enseignants", path: "/teachers" },
   { icon: Building2, label: "Salles", path: "/rooms" },
   { icon: BarChart3, label: "Rapports", path: "/reports" },
+  { icon: Settings, label: "Paramètres", path: "/settings" },
+];
+
+// Navigation items for Enseignant
+const enseignantNavItems = [
+  { icon: GraduationCap, label: "Mon Espace", path: "/profile/enseignant" },
+  { icon: Calendar, label: "Mon Emploi du temps", path: "/schedule" },
+  { icon: BookOpen, label: "Mes Séances", path: "/sessions" },
+  { icon: Settings, label: "Paramètres", path: "/settings" },
+];
+
+// Navigation items for Délégué
+const delegueNavItems = [
+  { icon: Users, label: "Mon Espace", path: "/profile/delegue" },
+  { icon: Calendar, label: "Emploi du temps", path: "/schedule" },
   { icon: Settings, label: "Paramètres", path: "/settings" },
 ];
 
@@ -55,7 +71,7 @@ const roleColors = {
 };
 
 export function Sidebar() {
-  const { profile, signOut, isChef, isEnseignant, isDelegue } = useAuth();
+  const { profile, signOut, isChef, isEnseignant } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -63,15 +79,14 @@ export function Sidebar() {
     navigate("/auth");
   };
 
-  const handleProfileNavigation = () => {
-    if (isChef) {
-      navigate("/profile/chef");
-    } else if (isEnseignant) {
-      navigate("/profile/enseignant");
-    } else {
-      navigate("/profile/delegue");
-    }
+  // Select navigation items based on role
+  const getNavItems = () => {
+    if (isChef) return chefNavItems;
+    if (isEnseignant) return enseignantNavItems;
+    return delegueNavItems;
   };
+
+  const navItems = getNavItems();
 
   const RoleIcon = profile?.role ? roleIcons[profile.role] : User;
   const roleLabel = profile?.role ? roleLabels[profile.role] : "Utilisateur";
@@ -129,7 +144,7 @@ export function Sidebar() {
           ))}
         </nav>
 
-        {/* User Profile Selector */}
+        {/* User Profile */}
         <div className="border-t border-sidebar-border p-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -154,10 +169,6 @@ export function Sidebar() {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>Mon Compte</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleProfileNavigation} className="gap-2">
-                <RoleIcon className="h-4 w-4" />
-                Mon Espace {roleLabel}
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate("/settings")} className="gap-2">
                 <Settings className="h-4 w-4" />
                 Paramètres

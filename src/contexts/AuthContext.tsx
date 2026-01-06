@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 type AppRole = "chef_departement" | "enseignant" | "delegue";
@@ -23,8 +22,10 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string, role?: AppRole) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  createUser: (email: string, password: string, fullName: string, role: AppRole, departement?: string, niveau?: string) => Promise<{ error: Error | null }>;
+  getAllProfiles: () => Promise<Profile[]>;
+  deleteUser: (userId: string) => Promise<{ error: Error | null }>;
   isChef: boolean;
   isEnseignant: boolean;
   isDelegue: boolean;
@@ -110,16 +111,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signUp = async (
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setProfile(null);
+    toast.success("Déconnexion réussie");
+  };
+
+  // Function for Chef to create new users
+  const createUser = async (
     email: string,
     password: string,
     fullName: string,
-    role: AppRole = "delegue"
+    role: AppRole,
+    departement?: string,
+    niveau?: string
   ) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -139,18 +149,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         return { error };
       }
+
+      // Update profile with additional info if provided
+      if (data.user && (departement || niveau)) {
+        await supabase
+          .from("profiles")
+          .update({ 
+            departement: departement || null, 
+            niveau: niveau || null 
+          })
+          .eq("user_id", data.user.id);
+      }
       
-      toast.success("Compte créé avec succès");
+      toast.success(`${role === "enseignant" ? "Enseignant" : "Délégué"} créé avec succès`);
       return { error: null };
     } catch (error) {
       return { error: error as Error };
     }
   };
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    setProfile(null);
-    toast.success("Déconnexion réussie");
+  // Function for Chef to get all profiles
+  const getAllProfiles = async (): Promise<Profile[]> => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching profiles:", error);
+        return [];
+      }
+      return data as Profile[];
+    } catch (error) {
+      console.error("Error fetching profiles:", error);
+      return [];
+    }
+  };
+
+  // Function for Chef to delete a user (soft delete - just removes from profiles)
+  const deleteUser = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("user_id", userId);
+
+      if (error) {
+        toast.error("Erreur lors de la suppression");
+        return { error };
+      }
+      
+      toast.success("Utilisateur supprimé");
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
   };
 
   const isChef = profile?.role === "chef_departement";
@@ -165,8 +219,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile,
         loading,
         signIn,
-        signUp,
         signOut,
+        createUser,
+        getAllProfiles,
+        deleteUser,
         isChef,
         isEnseignant,
         isDelegue,
