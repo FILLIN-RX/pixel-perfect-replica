@@ -1,5 +1,5 @@
 import { useEffect, ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "./Sidebar";
 import { motion } from "framer-motion";
@@ -9,14 +9,28 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
-  const { user, loading } = useAuth();
+  const { user, loading, profile } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
     }
   }, [user, loading, navigate]);
+
+  // Redirect to role-specific profile when accessing root
+  useEffect(() => {
+    if (!loading && user && profile && location.pathname === "/") {
+      if (profile.role === "chef_departement") {
+        navigate("/profile/chef");
+      } else if (profile.role === "enseignant") {
+        navigate("/profile/enseignant");
+      } else {
+        navigate("/profile/delegue");
+      }
+    }
+  }, [user, loading, profile, navigate, location.pathname]);
 
   if (loading) {
     return (
